@@ -51,13 +51,17 @@ public class ReadCSV_Test {
                 String[] values = line.split(",");
                 if (values.length > 0) {
                     setVariables(values);
-                } else {
-                    tableToSQLState(table);
+                } else { //csv 라인의 길이가 0인 경우 한 테이블 단위가 끝났다고 판단한다. 마지막 테이블은 이 else블록을 수행하지 않기 때문에 while문 종료 후 추가해준다.
                     tableList.add(table);
-                    //파일 쓰기
+                    table = new Table();  //테이블 초기화
                 }
             }
             tableList.add(table);
+
+            for(Table t:tableList){
+                tableToSQLState(t);
+            }
+
             System.out.println(tableList.toString());
 
         } catch (FileNotFoundException e) {
@@ -74,7 +78,7 @@ public class ReadCSV_Test {
 
         try {
             if (index0.equals("테이블 이름") || index0.contains("이름")) {
-                table = new Table();  //테이블 생성
+//                table = new Table();  //테이블 생성
                 table.setTableName(csvLine[4].trim());
 
             } else if (index0.equals("PRIMARY KEY")) {
@@ -104,7 +108,7 @@ public class ReadCSV_Test {
 
                     if (csvLine[8].contains("(")) {
                         table.addDefaults((csvLine[8] + "," + csvLine[9]).replaceAll("\"", ""));
-                    } else if (csvLine[8].contains(" ")) {
+                    } else if (csvLine[8].contains(" ") && csvLine[8] != " ") {
                         table.addDefaults("\'" + csvLine[8].trim() + "\'");
                     } else {
                         table.addDefaults(csvLine[8].trim());
@@ -123,6 +127,7 @@ public class ReadCSV_Test {
 
         } catch (ArrayIndexOutOfBoundsException e) {
             //테이블명 공란으로 예외처리
+            System.out.println("e = " + e);
         }
     }
 
@@ -130,15 +135,20 @@ public class ReadCSV_Test {
     public static void tableToSQLState(Table table) {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE " + table.getTableName() + "(\n");
+        ArrayList<String> columns = table.getColumns();
 
-        for (int i = 0; i < table.getColumns().size(); i++) {
+        for (int i = 0; i < columns.size(); i++) {
+            ArrayList<String> nulls = table.getNulls();
+            ArrayList<String> defaults = table.getDefaults();
+            ArrayList<String> columnTypes = table.getColumnTypes();
+
             sb.append("\t");
             if (i > 0) sb.append(",");
-            sb.append(table.getColumns().get(i) + " " + table.getColumnTypes().get(i));
-            if (table.getDefaults().get(i) != "") {
-                sb.append(" DEFAULT " + table.getDefaults().get(i));
+            sb.append(columns.get(i) + " " + columnTypes.get(i));
+            if (!defaults.get(i).equals("") && !defaults.get(i).equals(" ")) {
+               sb.append(" DEFAULT " + defaults.get(i));
             }
-            if (!table.getNulls().get(i).contains("Y")) {
+            if (!nulls.get(i).contains("Y")) {
                 sb.append(" NOT NULL");
             }
             sb.append("\n");
@@ -154,9 +164,8 @@ public class ReadCSV_Test {
         }
         sb.append("\n);");
 
-        System.out.println(sb.toString());
+        System.out.println(sb);
         System.out.println();
-
         sqlFileWrite(sb);
 
     }
