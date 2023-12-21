@@ -21,6 +21,7 @@ import java.util.List;
  * (0)3(1)(2)(3)(4)Y(5)MESSAGE(6)VARCHAR2(1024)(7)(8)경고메시지
  * (0)4(1)(2)(3)(4)Y(5)WAR_COMMENT(6)VARCHAR2(1024)(7)(8)관리자 코멘트
  * (0)5(1)Y(2)(3)(4)(5)REG_DATETIME(6)VARCHAR2(14)(7)(8)등록일시
+ *
  * =====
  * 1.테이블 이름          -> 0번 인덱스가 "테이블 이름" 인 경우 4번 인덱스가 테이블 이름
  * 2.PRIMARY KEY        -> 0번 인덱스가 "PRIMARY KEY" 인 경우 4번 인덱스부터 PRIMARY KEY
@@ -33,7 +34,7 @@ import java.util.List;
 public class ReadCSV_Test {
 
     static String relativeCsvDir = "csvDirectory";
-    static String csvFileName = "tableDescription.csv";
+    static String csvFileName = "test.csv";
     static String writeSqlDir = "sqlDirectory";
     static String sqlFileName = "tableDescription.sql";
     static List<Table> tableList = new ArrayList<>();
@@ -71,54 +72,58 @@ public class ReadCSV_Test {
         String index0 = csvLine[0].trim();
         int csvLineLen = csvLine.length;
 
-        if (index0.equals("테이블 이름") || index0.contains("이름")) {
-            table = new Table();  //테이블 생성
-            table.setTableName(csvLine[4].trim());
+        try {
+            if (index0.equals("테이블 이름") || index0.contains("이름")) {
+                table = new Table();  //테이블 생성
+                table.setTableName(csvLine[4].trim());
 
-        } else if (index0.equals("PRIMARY KEY")) {
-            for (int i = 4; i < csvLineLen; i++) {
-                table.addPrimaryKey(csvLine[i].trim().replaceAll("\"", ""));
-            }
-        } else if (index0.equals("FOREIGN KEY")) {
-            for (int i = 4; i < csvLineLen; i++) {
-                table.addForeignKey(csvLine[i].trim());
-            }
-        } else if (index0.equals("INDEX")) {
-            for (int i = 4; i < csvLineLen; i++) {
-                table.addIndexList(csvLine[i].trim());
-            }
-        } else if (index0.equals("UNIQUE INDEX")) {
-            for (int i = 4; i < csvLineLen; i++) {
-                table.addUnizueColumns(csvLine[i].trim().replaceAll("[()]", ""));
-            }
-        } else if (index0.matches("\\d+?")) {
-            //컬럼명, notnull
-            table.addColumns(csvLine[5].trim());
-            table.addNotNulls(csvLine[4].trim());
-
-            //타입, default
-            if (csvLine[6].contains("NUMBER(")) {
-                table.addColumnTypes((csvLine[6].trim() + "," + csvLine[7].trim()).replaceAll("\"", ""));
-
-                if (csvLine[8].contains("(")) {
-                    table.addDefaults((csvLine[8] + "," + csvLine[9]).replaceAll("\"", ""));
-                } else if (csvLine[8].contains(" ")) {
-                    table.addDefaults("\'" + csvLine[8].trim() + "\'");
-                } else {
-                    table.addDefaults(csvLine[8].trim());
+            } else if (index0.equals("PRIMARY KEY")) {
+                for (int i = 4; i < csvLineLen; i++) {
+                    table.addPrimaryKey(csvLine[i].trim().replaceAll("\"", ""));
                 }
-            } else {
-                table.addColumnTypes(csvLine[6].trim());
-                if (csvLine[7].contains("(")) {
-                    table.addDefaults((csvLine[7] + "," + csvLine[8]).replaceAll("\"", ""));
-                } else if (csvLine[7].contains(" ")) {
-                    table.addDefaults("\'" + csvLine[7].trim() + "\'");
+            } else if (index0.equals("FOREIGN KEY")) {
+                for (int i = 4; i < csvLineLen; i++) {
+                    table.addForeignKey(csvLine[i].trim());
+                }
+            } else if (index0.equals("INDEX")) {
+                for (int i = 4; i < csvLineLen; i++) {
+                    table.addIndexList(csvLine[i].trim());
+                }
+            } else if (index0.equals("UNIQUE INDEX")) {
+                for (int i = 4; i < csvLineLen; i++) {
+                    table.addUnizueColumns(csvLine[i].trim().replaceAll("[()]", ""));
+                }
+            } else if (index0.matches("\\d+?")) {
+                //컬럼명, notnull
+                table.addColumns(csvLine[5].trim());
+                table.addNotNulls(csvLine[4].trim());
+
+                //타입, default
+                if (csvLine[6].contains("NUMBER(")) {
+                    table.addColumnTypes((csvLine[6].trim() + "," + csvLine[7].trim()).replaceAll("\"", ""));
+
+                    if (csvLine[8].contains("(")) {
+                        table.addDefaults((csvLine[8] + "," + csvLine[9]).replaceAll("\"", ""));
+                    } else if (csvLine[8].contains(" ")) {
+                        table.addDefaults("\'" + csvLine[8].trim() + "\'");
+                    } else {
+                        table.addDefaults(csvLine[8].trim());
+                    }
                 } else {
-                    table.addDefaults(csvLine[7].trim());
+                    table.addColumnTypes(csvLine[6].trim());
+                    if (csvLine[7].contains("(")) {
+                        table.addDefaults((csvLine[7] + "," + csvLine[8]).replaceAll("\"", ""));
+                    } else if (csvLine[7].contains(" ")) {
+                        table.addDefaults("\'" + csvLine[7].trim() + "\'");
+                    } else {
+                        table.addDefaults(csvLine[7].trim());
+                    }
                 }
             }
+
+        } catch (ArrayIndexOutOfBoundsException e) {
+            //테이블명 공란으로 예외처리
         }
-
     }
 
 
